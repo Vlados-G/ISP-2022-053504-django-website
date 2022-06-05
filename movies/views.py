@@ -1,5 +1,5 @@
 from django.db.models import Q
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.views.generic import ListView, DetailView
 from django.views.generic.base import View
@@ -10,6 +10,7 @@ from .forms import ReviewForm, RatingForm
 
 class GenreYear:
     """Жанры и года выхода фильмов"""
+
     def get_genres(self):
         return Genre.objects.all()
 
@@ -17,16 +18,17 @@ class GenreYear:
         return Movie.objects.filter(draft=False).values("year")
 
 
-class MovieView(GenreYear, ListView):
+class MoviesView(GenreYear, ListView):
     """Список фильмов"""
     model = Movie
     queryset = Movie.objects.filter(draft=False)
-    paginate_by = 4
+    paginate_by = 2
 
 
 class MovieDetailView(GenreYear, DetailView):
     """Полное описание фильма"""
     model = Movie
+    queryset = Movie.objects.filter(draft=False)
     slug_field = "url"
 
     def get_context_data(self, **kwargs):
@@ -37,6 +39,7 @@ class MovieDetailView(GenreYear, DetailView):
 
 class AddReview(View):
     """Отзывы"""
+
     def post(self, request, pk):
         form = ReviewForm(request.POST)
         movie = Movie.objects.get(id=pk)
@@ -56,7 +59,7 @@ class ActorView(GenreYear, DetailView):
     slug_field = "name"
 
 
-class FilterMovieView(GenreYear, ListView):
+class FilterMoviesView(GenreYear, ListView):
     """Фильтр фильмов"""
     paginate_by = 2
 
@@ -74,21 +77,9 @@ class FilterMovieView(GenreYear, ListView):
         return context
 
 
-class Search(ListView):
-    """Поиск фильмов"""
-    paginate_by = 2
-
-    def get_queryset(self):
-        return Movie.objects.filter(title__icontains=self.request.GET.get("q"))
-
-    def get_context_data(self, *args, **kwargs):
-        context = super().get_context_data(*args, **kwargs)
-        context["q"] = f'q={self.request.GET.get("q")}&'
-        return context
-
-
 class AddStarRating(View):
     """Добавление рейтинга фильму"""
+
     def get_client_ip(self, request):
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
@@ -108,3 +99,16 @@ class AddStarRating(View):
             return HttpResponse(status=201)
         else:
             return HttpResponse(status=400)
+
+
+class Search(ListView):
+    """Поиск фильмов"""
+    paginate_by = 3
+
+    def get_queryset(self):
+        return Movie.objects.filter(title__icontains=self.request.GET.get("q"))
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context["q"] = f'q={self.request.GET.get("q")}&'
+        return context
