@@ -1,11 +1,15 @@
+from datetime import datetime
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.views.generic import ListView, DetailView
 from django.views.generic.base import View
-
+import asyncio
+import logging
 from .models import Movie, Actor, Genre, Rating
 from .forms import ReviewForm, RatingForm
+
+logger = logging.getLogger(__name__)
 
 
 class GenreYear:
@@ -64,6 +68,7 @@ class FilterMoviesView(GenreYear, ListView):
     paginate_by = 2
 
     def get_queryset(self):
+
         queryset = Movie.objects.filter(
             Q(year__in=self.request.GET.getlist("year")) |
             Q(genres__in=self.request.GET.getlist("genre"))
@@ -71,6 +76,7 @@ class FilterMoviesView(GenreYear, ListView):
         return queryset
 
     def get_context_data(self, *args, **kwargs):
+
         context = super().get_context_data(*args, **kwargs)
         context["year"] = ''.join([f"year={x}&" for x in self.request.GET.getlist("year")])
         context["genre"] = ''.join([f"genre={x}&" for x in self.request.GET.getlist("genre")])
@@ -112,3 +118,51 @@ class Search(ListView):
         context = super().get_context_data(*args, **kwargs)
         context["q"] = f'q={self.request.GET.get("q")}&'
         return context
+
+
+def check_fess_in_world(fess_in_world):
+    end = True
+
+    async def currensy_transaction():
+        logger.info(
+            f'start of the currency transfer process: {datetime.now()}')
+
+        while end:
+            await asyncio.sleep(1 / 10)
+            logger.info(
+                '====================Currensy transaction process====================')
+
+    async def get_usd(fess):
+        await asyncio.sleep(1 / 2)
+        fess = fess_in_world / 2.6
+        logger.info(f'currency transfer to USD: {fess}')
+
+    async def get_euro(fess):
+        await asyncio.sleep(1)
+        fess = fess_in_world / 2.75
+        logger.info(
+            f'currency transfer to EURO: {fess}')
+
+    async def get_pounds(fess):
+        global end
+        await asyncio.sleep(1.5)
+        fess = fess_in_world / 3.3
+        logger.info(
+            f'currency transfer to pounds: {fess}')
+        end = False
+
+    async def get_currency():
+        c = currensy_transaction()
+        p_usd = get_usd(fess=fess_in_world)
+        p_euro = get_euro(fess=fess_in_world)
+        p_pounds = get_pounds(fess=fess_in_world)
+
+        asyncio.create_task(c)
+        asyncio.create_task(p_usd)
+        asyncio.create_task(p_euro)
+        await p_pounds
+
+        logger.info(
+            f'The end of checking currensy transaction: {datetime.now()}')
+
+    asyncio.run(get_currency())
