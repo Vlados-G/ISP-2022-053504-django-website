@@ -1,0 +1,27 @@
+version: "3"
+
+services:
+  web:
+    container_name: web
+    build: .
+    ports:
+      - "1337:8000"
+    depends_on:
+      - postgresql
+    volumes:
+      - .:/home/appuser/project/
+    entrypoint: [ ]
+    command: bash -c "
+      ./wait_for.sh postgresql:5432 &&
+      python manage.py migrate &&
+      python manage.py collectstatic --no-input &&
+      python manage.py runserver"
+  postgresql:
+    container_name: postgresql
+    image: postgres:latest
+    volumes:
+      - pg_data:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+volumes:
+  pg_data:
