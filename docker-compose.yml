@@ -1,9 +1,11 @@
-version: "3"
+version: "3.7"
 
 services:
   web:
     container_name: web
     build: .
+    env_file:
+      - .env
     ports:
       - "1337:8000"
     depends_on:
@@ -12,15 +14,17 @@ services:
       - .:/home/appuser/project/
     entrypoint: [ ]
     command: bash -c "
-      ./wait_for.sh postgresql:5432 &&
+      ./wait_for.sh $${POSTGRES_HOST}:$${POSTGRES_PORT} &&
       python manage.py migrate &&
       python manage.py collectstatic --no-input &&
-      python manage.py runserver"
+      python manage.py runserver 0.0.0.0:8000"
   postgresql:
     container_name: postgresql
     image: postgres:latest
     volumes:
       - pg_data:/var/lib/postgresql/data/
+    env_file:
+      - .env
     ports:
       - "5432:5432"
 volumes:
